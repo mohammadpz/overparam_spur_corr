@@ -13,7 +13,9 @@ class DRODataset(Dataset):
         group_array = []
         y_array = []
 
-        for x,y,g in self:
+        # for x,y,g in self:
+        for idx in range(len(self.dataset)):
+            y, g = self.dataset.get_yg(idx)
             group_array.append(g)
             y_array.append(y)
         self._group_array = torch.LongTensor(group_array)

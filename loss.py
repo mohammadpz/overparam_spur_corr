@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 class LossComputer:
-    def __init__(self, criterion, is_robust, dataset, alpha=None, gamma=0.1, adj=None, min_var_weight=0, step_size=0.01, normalize_loss=False, btl=False):
+    def __init__(self, criterion, is_robust, dataset, alpha=None, gamma=0.1, adj=None, min_var_weight=0, step_size=0.01, normalize_loss=False, btl=False, sp=0.0):
         self.criterion = criterion
         self.is_robust = is_robust
         self.gamma = gamma
@@ -14,6 +14,7 @@ class LossComputer:
         self.step_size = step_size
         self.normalize_loss = normalize_loss
         self.btl = btl
+        self.sp = sp
 
         self.n_groups = dataset.n_groups
         self.group_counts = dataset.group_counts().cuda()
@@ -37,9 +38,9 @@ class LossComputer:
 
     def loss(self, yhat, y, group_idx=None, is_training=False):
         # compute per-sample and per-group losses
-        per_sample_losses = self.criterion(yhat, y)
+        per_sample_losses = torch.log(1.0 + torch.exp(-yhat[:, 0] * (2.0 * y - 1.0)))
         group_loss, group_count = self.compute_group_avg(per_sample_losses, group_idx)
-        group_acc, group_count = self.compute_group_avg((torch.argmax(yhat,1)==y).float(), group_idx)
+        group_acc, group_count = self.compute_group_avg((torch.sign(yhat[:, 0]) == (2.0 * y - 1.0)).float(), group_idx)
 
         # update historical losses
         self.update_exp_avg_loss(group_loss, group_count)
@@ -52,6 +53,9 @@ class LossComputer:
         else:
             actual_loss = per_sample_losses.mean()
             weights = None
+
+        actual_loss += self.sp * ((yhat[torch.where(y == 1)] - 2.5) ** 2).mean()
+        actual_loss += self.sp * ((yhat[torch.where(y == 0)] - 0.44) ** 2).mean()
 
         # update stats
         self.update_stats(actual_loss, group_loss, group_acc, group_count, weights)

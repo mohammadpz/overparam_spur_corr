@@ -51,7 +51,6 @@ def run_epoch(epoch, model, optimizer, loader, loss_computer, logger, csv_logger
                 )[1] # [1] returns logits
             else:
                 outputs = model(x)
-
             loss_main = loss_computer.loss(outputs, y, g, is_training)
 
             if is_training:
@@ -71,6 +70,8 @@ def run_epoch(epoch, model, optimizer, loader, loss_computer, logger, csv_logger
                 csv_logger.flush()
                 loss_computer.log_stats(logger, is_training)
                 loss_computer.reset_stats()
+            # if batch_idx == 200:
+            #     break
 
         if (not is_training) or loss_computer.batch_count > 0:
             csv_logger.log(epoch, batch_idx, loss_computer.get_stats(model, args))
@@ -123,11 +124,17 @@ def train(model, criterion, dataset,
             warmup_steps=args.warmup_steps,
             t_total=t_total)
     else:
-        optimizer = torch.optim.SGD(
-            filter(lambda p: p.requires_grad, model.parameters()),
-            lr=args.lr,
-            momentum=0.9,
-            weight_decay=args.weight_decay)
+        if args.adam:
+            optimizer = torch.optim.Adam(
+                filter(lambda p: p.requires_grad, model.parameters()),
+                lr=args.lr,
+                weight_decay=args.weight_decay)
+        else:
+            optimizer = torch.optim.SGD(
+                filter(lambda p: p.requires_grad, model.parameters()),
+                lr=args.lr,
+                momentum=0.9,
+                weight_decay=args.weight_decay)
         if args.scheduler:
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer,

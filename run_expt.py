@@ -28,19 +28,21 @@ def main():
     # Data
     parser.add_argument('--fraction', type=float, default=1.0)
     parser.add_argument('--root_dir', default=None)
+    parser.add_argument('--data_dir', default=None)
     parser.add_argument('--subsample_to_minority', action='store_true', default=False)
     parser.add_argument('--reweight_groups', action='store_true', default=False)
     parser.add_argument('--augment_data', action='store_true', default=False)
     parser.add_argument('--val_fraction', type=float, default=0.1)
     # Objective
     parser.add_argument('--robust', default=False, action='store_true')
-    parser.add_argument('--alpha', type=float, default=0.2)
+    parser.add_argument('--alpha', type=float, default=0.01)
     parser.add_argument('--generalization_adjustment', default="0.0")
     parser.add_argument('--automatic_adjustment', default=False, action='store_true')
     parser.add_argument('--robust_step_size', default=0.01, type=float)
     parser.add_argument('--use_normalized_loss', default=False, action='store_true')
     parser.add_argument('--btl', default=False, action='store_true')
     parser.add_argument('--hinge', default=False, action='store_true')
+    parser.add_argument('--adam', default=False, action='store_true')
 
     # Model
     parser.add_argument(
@@ -51,21 +53,22 @@ def main():
     parser.add_argument('--resnet_width', type=int, default=None)
 
     # Optimization
-    parser.add_argument('--n_epochs', type=int, default=4)
-    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--n_epochs', type=int, default=3)
+    parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', action='store_true', default=False)
     parser.add_argument('--weight_decay', type=float, default=5e-5)
     parser.add_argument('--gamma', type=float, default=0.1)
     parser.add_argument('--minimum_variational_weight', type=float, default=0)
     # Misc
-    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--show_progress', default=False, action='store_true')
     parser.add_argument('--log_dir', default='./logs')
     parser.add_argument('--log_every', default=50, type=int)
     parser.add_argument('--save_step', type=int, default=10)
-    parser.add_argument('--save_best', action='store_true', default=False)
+    parser.add_argument('--save_best', action='store_true', default=True)
     parser.add_argument('--save_last', action='store_true', default=False)
+    parser.add_argument('--sp', type=float, default=0.0)
 
     args = parser.parse_args()
     check_args(args)
@@ -115,7 +118,8 @@ def main():
     data['train_data'] = train_data
     data['val_data'] = val_data
     data['test_data'] = test_data
-    n_classes = train_data.n_classes
+    # n_classes = train_data.n_classes
+    n_classes = 1
 
     log_data(data, logger)
 
